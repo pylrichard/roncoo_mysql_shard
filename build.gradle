@@ -1,0 +1,35 @@
+buildscript {
+    ext {
+        gradleScriptsRepo = "https://raw.githubusercontent.com/pylrichard/gradle_scripts/master/"
+    }
+    apply from: gradleScriptsRepo + 'maven.gradle'
+    apply from: gradleScriptsRepo + 'version.gradle'
+    repositories {
+        maven { url REPOSITORY_URL }
+    }
+}
+
+allprojects {
+    apply from: gradleScriptsRepo + 'java.gradle'
+
+    version = '0.1.0'
+    group = 'com.roncoo'
+
+    dependencies {
+        compile "mysql:mysql-connector-java:$mysqlConnectorVersion"
+        compile "com.google.guava:guava:$guavaVersion"
+        compile "org.projectlombok:lombok:$lombokVersion"
+        compile "joda-time:joda-time:$jodaVersion"
+        compile "org.mybatis:mybatis:$mybatisVersion"
+        compile "org.mybatis:mybatis-spring:$mybatisSpringVersion"
+        compile "org.apache.commons:commons-lang3:$commonLangVersion"
+        compile "org.aspectj:aspectjweaver:$aspectjweaverVersion"
+        compile "com.alibaba:druid:$druidVersion"
+        compile "org.springframework:spring-context:$springVersion"
+        compile "org.springframework:spring-aspects:$springVersion"
+        compile "org.springframework:spring-jdbc:$springVersion"
+        compile "org.springframework:spring-tx:$springVersion"
+        //testRuntime表示代码中调用JDK的JDBC接口，在运行时加载具体实现的jar
+        testCompile "junit:junit:$junitVersion"
+    }
+}

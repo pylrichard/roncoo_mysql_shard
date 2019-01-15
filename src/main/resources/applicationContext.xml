@@ -1,0 +1,68 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <context:property-placeholder location="classpath:db.properties"/>
+
+    <context:component-scan base-package="com.roncoo.mysql.shard"/>
+
+    <bean id="dynamicDataSource" class="com.roncoo.mysql.shard.db.DynamicDataSource">
+        <property name="targetDataSources">
+            <map key-type="java.lang.String">
+                <entry key="master" value-ref="masterDataSource"/>
+                <entry key="slave" value-ref="slaveDataSource"/>
+            </map>
+        </property>
+        <property name="defaultTargetDataSource" ref="masterDataSource"/>
+    </bean>
+
+    <aop:aspectj-autoproxy/>
+
+    <bean id="dataSourceAspect" class="com.roncoo.mysql.shard.db.DataSourceAspect"/>
+
+    <aop:config>
+        <aop:aspect ref="dataSourceAspect">
+            <aop:pointcut expression="execution(* * (..))" id="dataSourcePointcut"/>
+            <aop:before method="before" pointcut-ref="dataSourcePointcut"/>
+        </aop:aspect>
+    </aop:config>
+
+    <bean id="masterDataSource" class="com.alibaba.druid.pool.DruidDataSource" destroy-method="close">
+        <property name="url" value="${master.jdbc.url}"/>
+        <property name="username" value="${master.jdbc.username}"/>
+        <property name="password" value="${master.jdbc.password}"/>
+        <property name="driverClassName" value="${master.jdbc.driver}"/>
+        <property name="maxActive" value="${master.maxActive}"/>
+        <property name="maxWait" value="60000"/>
+        <property name="testWhileIdle" value="true"/>
+        <property name="filters" value="stat"/>
+    </bean>
+
+    <bean id="slaveDataSource" class="com.alibaba.druid.pool.DruidDataSource" destroy-method="close">
+        <property name="url" value="${slave.jdbc.url}"/>
+        <property name="username" value="${slave.jdbc.username}"/>
+        <property name="password" value="${slave.jdbc.password}"/>
+        <property name="driverClassName" value="${slave.jdbc.driver}"/>
+        <property name="maxActive" value="${slave.maxActive}"/>
+        <property name="maxWait" value="60000"/>
+        <property name="testWhileIdle" value="true"/>
+        <property name="filters" value="stat"/>
+    </bean>
+
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dynamicDataSource"/>
+        <property name="configLocation" value="classpath:mybatis/sqlMapConfig.xml"/>
+    </bean>
+
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.roncoo.mysql.shard"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+    </bean>
+</beans>
